@@ -10,7 +10,7 @@ activity = discord.Game(name="c!help")
 
 
 class Challenge:
-	def __init__(self, user1, user2, handle1, handle2, problem):
+	def __init__(self, user1, user2, handle1, handle2, problem, channel):
 		self.user1 = user1  		# discord id of first user
 		self.user2 = user2 			# discord id of second user
 		self.handle1 = handle1  	# cf handle of first user
@@ -20,15 +20,23 @@ class Challenge:
 		self.complete = False 		# is challenge complete or not?
 		self.start_time = time.time()
 
+test = {
+	"contestId":1251,
+	"index":"A",
+	"name":"Broken Keyboard",
+	"type":"PROGRAMMING",
+	"rating":1000,
+	"tags":["brute force","strings","two pointers"]
+}
 
-challenges = []		# list of Challenges
-
+challenges = [Challenge(159105923841785857, 159105923841785857, 'aeternalis1', 'AQT', test, 473158290948227083)]		# list of Challenges
 
 async def end_challenge_draw(challenge):
 	total_time = time.time() - challenge.start_time 
 	minutes = total_time / 60
 	seconds = total_time % 60
-	await challenge.channel.send("<@%i> and <@%i> solved the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds as a team. Guess it's a draw!" \
+	channel = client.get_channel(challenge.channel)
+	await channel.send("<@%i> and <@%i> solved the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds as a team. Guess it's a draw!" \
 	 							% (challenge.user1, challenge.user2, challenge.problem['contestId'], challenge.problem['index'], minutes, seconds))
 	challenge.complete = True
 
@@ -37,7 +45,8 @@ async def end_challenge_win(challenge, winner, loser):
 	total_time = time.time() - challenge.start_time 
 	minutes = total_time / 60
 	seconds = total_time % 60
-	await challenge.channel.send("<@%i> defeated <@%i>, solving the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds!" \
+	channel = client.get_channel(challenge.channel)
+	await channel.send("<@%i> defeated <@%i>, solving the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds!" \
 								% (winner, loser, challenge.problem['contestId'], challenge.problem['index'], minutes, seconds))
 	challenge.complete = True
 
@@ -52,19 +61,30 @@ async def check_subs():
 			continue
 
 		conversion_data = response.json()
-
 		for sub in conversion_data['result'][::-1]:
+			if sub['verdict'] != 'OK':
+				continue
 			for challenge in challenges:
 				if challenge.complete:
 					continue
 				if sub['problem'] == challenge.problem:
-					if challenge.handle1 in sub['party']['members'] and challenge.handle2 in sub['party']['members']:
+					print ("YES", sub)
+					found = 0
+					for user in sub['author']['members']:
+						if user['handle'].lower() == challenge.handle1.lower():
+							found ^= 2
+						elif user['handle'].lower() == challenge.handle2.lower():
+							found ^= 1
+					if found == 3:
 						await end_challenge_draw(challenge)
-					elif challenge.handle1 in sub['party']['members']:
+					elif found == 2:
 						await end_challenge_win(challenge, challenge.user1, challenge.user2)
-					elif challenge.handle2 in sub['party']['members']:
+					elif found == 1:
 						await end_challenge_win(challenge, challenge.user2, challenge.user1)
-		challenges = filter(lambda x: not x.complete, challenges)
+
+		for challenge in challenges:
+			if challenge.complete:
+				challenges.remove(challenge)
 
 		await asyncio.sleep(5)	# check every 5 seconds
 
