@@ -249,6 +249,12 @@ async def c_challenge(message, author, server):
 		await message.channel.send('There were no problems filling those contraints. Either you\'ve solved too many problems or you should adjust the difficulty range or problem types.')
 		return
 
+	if challenge_id in pending:
+		for challenge in pending[challenge_id]:
+			if challenge.user == author:
+				await message.channel.send('<@%i> has already challenged you to a race! You may either cancel or accept it with the commands `c!cancel <@user>` or `c!accept <@user>` respectively.' % challenge_id)
+				return
+
 	if author not in pending:
 		pending[author] = [cur_challenge]
 	else:
@@ -266,7 +272,7 @@ async def c_cancel(message, author, server):
 
 	query = message.content.split()
 	if len(query) != 2:
-		await message.channel.send('That is an invalid request. Cancel challenges in the format `c!cancel @user`. See c!help for clarification.')
+		await message.channel.send('That is an invalid request. Cancel pending challenges in the format `c!cancel @user`. See c!help for clarification.')
 		return
 
 	tar = query[1].replace('!',"")
@@ -279,21 +285,25 @@ async def c_cancel(message, author, server):
 		return
 	target_id = int(tar[2:-1])
 
-	if author not in pending:
-		await message.channel.send('You have no ongoing or pending challenge with that user.')
+	if author not in pending and target_id not in pending:
+		await message.channel.send('You have no pending challenge with that user.')
 		return
 
-	for challenge in pending[author]:
-		if challenge.user == target_id:
-			await message.channel.send('You have successfully canceled your pending challenge with <@%i>.' % target_id)
-			return
+	if author in pending:
+		for challenge in pending[author]:
+			if challenge.user == target_id:
+				await message.channel.send('You have successfully canceled your pending challenge with <@%i>.' % target_id)
+				pending[author].remove(challenge)
+				return
 
-	for challenge in challenges:
-		if (challenge.user1 == author and challenge.user2 == target_id) or (challenge.user1 == target_id and challenge.user2 == author):
-			await message.channel.send('You have successfully canceled your pending challenge with <@%i>.' % target_id)
-			return
+	if target_id in pending:
+		for challenge in pending[target_id]:
+			if challenge.user == author:
+				await message.channel.send('You have successfully canceled your pending challenge with <@%i>.' % target_id)
+				pending[target_id].remove(challenge)
+				return
 
-	await message.channel.send('You have no ongoing or pending challenge with that user.')
+	await message.channel.send('You have no pending challenge with that user.')
 
 
 async def c_accept(message, author, server):
@@ -335,23 +345,27 @@ async def c_accept(message, author, server):
 				await message.channel.send("The challenge has begun! https://codeforces.com/problemset/problem/%i/%s" % (problem['contestId'], problem['index']))
 				cur_challenge = Challenge(challenge_id, author, challenge.handle1, challenge.handle2, problem, message.channel)
 				challenges.append(cur_challenge)
+				pending[challenge_id].remove(challenge)
 				return
 
 	await message.channel.send('You have no pending challenge from that user.')
 
 
-
-async def c_decline(message, author, server):
+async def c_pending(message, author, server):
 	pass
 
+
+async def c_ongoing(message, author, server):
+	pass
 
 
 to_func = {
     'help' : c_help,				# info about commands
     'challenge' : c_challenge,		# challenge user to race
-    'cancel' : c_cancel,			# retract challenge to user
+    'cancel' : c_cancel,			# cancel pending challenge with user (can be from either challenger or challengee)
     'accept' : c_accept,			# accept user's challenge
-    'decline' : c_decline			# decline user's challenge
+    'pending' : c_pending,			# view pending challenges
+    'ongoing' : c_ongoing			# view ongoing challenges
 }
 
 
