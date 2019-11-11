@@ -3,6 +3,7 @@ import json
 import requests
 import asyncio
 import time
+from random import randint
 
 client = discord.Client()
 
@@ -19,6 +20,15 @@ class Challenge:
 		self.channel = channel 		# original channel the challenge was sent in
 		self.complete = False 		# is challenge complete or not?
 		self.start_time = time.time()
+
+
+class PendingChallenge:
+	def __init__(self, user, handle1, handle2, diff_range, problem_types):
+		self.user = user  		# discord id of first user
+		self.handle1 = handle1  	# cf handle of first user
+		self.handle2 = handle2 		# cf handle of second user
+		self.diff_range = diff_range 		# difficulty range
+		self.problem_types = problem_types		# problem types (AND, not OR)
 
 
 problem_types = ['constructive algorithms','sortings','strings','dp',
@@ -48,8 +58,7 @@ async def end_challenge_draw(challenge):
 	total_time = time.time() - challenge.start_time 
 	minutes = total_time / 60
 	seconds = total_time % 60
-	channel = client.get_channel(challenge.channel)
-	await channel.send("<@%i> and <@%i> solved the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds as a team. Guess it's a draw!" \
+	await challenge.channel.send("<@%i> and <@%i> solved the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds as a team. Guess it's a draw!" \
 	 							% (challenge.user1, challenge.user2, challenge.problem['contestId'], challenge.problem['index'], minutes, seconds))
 	challenge.complete = True
 
@@ -58,8 +67,7 @@ async def end_challenge_win(challenge, winner, loser):
 	total_time = time.time() - challenge.start_time 
 	minutes = total_time / 60
 	seconds = total_time % 60
-	channel = client.get_channel(challenge.channel)
-	await channel.send("<@%i> defeated <@%i>, solving the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds!" \
+	await channelchannel.send("<@%i> defeated <@%i>, solving the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds!" \
 								% (winner, loser, challenge.problem['contestId'], challenge.problem['index'], minutes, seconds))
 	challenge.complete = True
 
@@ -84,7 +92,6 @@ async def check_subs():
 				if challenge.complete:
 					continue
 				if sub['problem'] == challenge.problem:
-					print ("YES", sub)
 					found = 0
 					for user in sub['author']['members']:
 						if user['handle'].lower() == challenge.handle1.lower():
@@ -139,6 +146,54 @@ async def valid_handles(handle1, handle2): 		# check validity of submitted handl
 	return True
 
 
+async def get_problems(challenge):
+	SUBS_URL = "https://codeforces.com/api/user.status?handle=%s" % challenge.handle1
+	response = requests.get(SUBS_URL)
+	if response.status_code != 200:
+		return False
+
+	submissions1 = response.json()
+
+	SUBS_URL = "https://codeforces.com/api/user.status?handle=%s" % challenge.handle2
+	response = requests.get(SUBS_URL)
+	if response.status_code != 200:
+		return False
+
+	submissions2 = response.json()
+
+	PROBLEMS_URL = "https://codeforces.com/api/problemset.problems?"
+
+	if challenge.problem_types:
+		PROBLEMS_URL += "tags="+";".join(challenge.problem_types)
+
+	response = requests.get(PROBLEMS_URL)
+	if response.status_code != 200:
+		return False
+
+	seen = {}
+
+	for sub in submissions1['result']:
+		if 'problemsetName' in sub['problem']:
+			continue
+		seen[str(sub['problem']['contestId'])+sub['problem']['index']] = 1
+
+	for sub in submissions2['result']:
+		if 'problemsetName' in sub['problem']:
+			continue
+		seen[str(sub['problem']['contestId'])+sub['problem']['index']] = 1
+
+	problems = response.json()
+
+	viable = []
+
+	for problem in problems['result']['problems']:
+		if 'rating' in problem and 'problemsetName' not in problem:
+			if problem['rating'] and challenge.diff_range[0] <= problem['rating'] <= challenge.diff_range[1]:
+				viable.append(problem)
+
+	return viable
+
+
 async def c_challenge(message, author, server):
 	query = message.content.split()
 	if len(query) < 6:
@@ -156,7 +211,7 @@ async def c_challenge(message, author, server):
 		await message.channel.send('That is an invalid request. Please format challenges as thus: `c!challenge [@discord user] [cf handle1] [cf handle2] [difficulty ceiling] [problem tags]`. See c!help for clarification.')
 		return
 	challenge_id = int(tar[2:-1])
-	cur_challenge = [challenge_id,[0,5000],[]]		# id of challengee, difficulty range of problem, problem types
+	cur_challenge = PendingChallenge(challenge_id, query[2], query[3], [0,5000], [])
 
 	#	check if handles are both valid
 
@@ -167,7 +222,7 @@ async def c_challenge(message, author, server):
 	#	check if query range is integers
 
 	try:
-		cur_challenge[1][0], cur_challenge[1][1] = int(query[4]), int(query[5])
+		cur_challenge.diff_range[0], cur_challenge.diff_range[1] = int(query[4]), int(query[5])
 	except:
 		await message.channel.send('The difficulty range requested is invalid.')
 		return
@@ -180,7 +235,7 @@ async def c_challenge(message, author, server):
 	for i in range(6,len(query)):
 		cur = (cur + " " + query[i]).strip()
 		if cur in problem_types:
-			cur_challenge.append(cur)
+			cur_challenge.problem_types.append(cur)
 			cur = ''
 	if cur != '':
 		await message.channel.send('You submitted an invalid problem type. Refer to `c!help` for aid.')
@@ -188,23 +243,67 @@ async def c_challenge(message, author, server):
 
 	#	need to check whether or not a challenge between the two users is already pending
 
-	if author not in pending:
-		pending[author] = [challenge_id]
-	else:
-		if challenge_id in pending[author]:
-			await message.channel.send('You already have a pending challenge with <@%i>! If you wish to cancel it, use the `c!cancel` command.' % challenge_id)
-			return
-		else:
-			pending[author].append(challenge_id)
-	await message.channel.send('<@%i> has challenged <@%i> to a race with the following parameters:' % (author, challenge_id))
+	if not await get_problems(cur_challenge):
+		await message.channel.send('There were no problems filling those contraints. Either you\'ve solved too many problems or you should adjust the difficulty range or problem types.')
+		return
 
+	if author not in pending:
+		pending[author] = [cur_challenge]
+	else:
+		for challenge in pending[author]:
+			if challenge_id == challenge.user:
+				await message.channel.send('You already have a pending challenge with <@%i>! If you wish to cancel it, use the `c!cancel` command.' % challenge_id)
+				return
+		pending[author].append(cur_challenge)
+
+	await message.channel.send('<@%i> has challenged <@%i> to a race with the following parameters:' % (author, challenge_id))
+	
 
 
 async def c_cancel(message, author, server):
 	pass
 
+
 async def c_accept(message, author, server):
-	pass
+	query = message.content.split()
+	tar = query[1]
+	try:
+		if len(tar) <= 3 or tar[:2] != '<@' or tar[-1] != '>' or int(tar[2:-1]) not in [member.id for member in server.members]:
+			await message.channel.send('That is an invalid request. Accept challenges in the format `c!accept @user`. See c!help for clarification.')
+			return
+	except ValueError:
+		await message.channel.send('That is an invalid request. Accept challenges in the format `c!accept @user`. See c!help for clarification.')
+		return
+	challenge_id = int(tar[2:-1])
+
+	#	if the target user never even started a challenge
+	if challenge_id not in pending:
+		await message.channel.send('You have no pending challenge from that user.')
+		return
+
+	for challenge in pending[challenge_id]:
+		if challenge.user == author:
+			problems = await get_problems(challenge)
+			if not problems:
+				await message.channel.send('Apparently there are no longer any problems filling the constraints. Please try resending the challenge.')
+				pending[challenge_id].remove(challenge)
+				return
+			else:
+				problem = problems[randint(0,len(problems)-1)]
+				await message.channel.send('<@%i> has accepted <@%i>\'s challenge! The problem will be revealed in 3' % (author, challenge_id))
+				await asyncio.sleep(1)
+				await message.channel.send('2')
+				await asyncio.sleep(1)
+				await message.channel.send('1')
+				await asyncio.sleep(1)
+				await message.channel.send("The challenge has begun! https://codeforces.com/problemset/problem/%i/%s" % (problem['contestId'], problem['index']))
+				cur_challenge = Challenge(challenge.user, author, challenge.handle1, challenge.handle2, problem, message.channel)
+				challenges.append(cur_challenge)
+				return
+
+	await message.channel.send('You have no pending challenge from that user.')
+
+
 
 async def c_decline(message, author, server):
 	pass
