@@ -50,7 +50,7 @@ test = {
 }
 
 
-challenges = [Challenge(159105923841785857, 159105923841785857, 'aeternalis1', 'AQT', test, 473158290948227083)]		# list of Challenges
+challenges = []		# list of Challenges
 pending = {} 	#pending challenges, mapped from challenger to list of challengees
 
 
@@ -67,7 +67,7 @@ async def end_challenge_win(challenge, winner, loser):
 	total_time = time.time() - challenge.start_time 
 	minutes = total_time / 60
 	seconds = total_time % 60
-	await channelchannel.send("<@%i> defeated <@%i>, solving the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds!" \
+	await challenge.channel.send("<@%i> defeated <@%i>, solving the problem https://codeforces.com/problemset/problem/%i/%s in %i minutes and %i seconds!" \
 								% (winner, loser, challenge.problem['contestId'], challenge.problem['index'], minutes, seconds))
 	challenge.complete = True
 
@@ -256,7 +256,7 @@ async def c_challenge(message, author, server):
 				return
 		pending[author].append(cur_challenge)
 
-	await message.channel.send('<@%i> has challenged <@%i> to a race with the following parameters:' % (author, challenge_id))
+	await message.channel.send('<@%i> has challenged <@%i> to a race! <@%i> should send the message \"c!accept <@%i>\" to accept.' % (author, challenge_id, challenge_id, author))
 	
 
 
