@@ -91,7 +91,7 @@ async def check_subs():
 			for challenge in challenges:
 				if challenge.complete:
 					continue
-				if sub['problem'] == challenge.problem:
+				if sub['problem']['name'] == challenge.problem['name']:
 					found = 0
 					for user in sub['author']['members']:
 						if user['handle'].lower() == challenge.handle1.lower():
@@ -175,19 +175,19 @@ async def get_problems(challenge):
 	for sub in submissions1['result']:
 		if 'problemsetName' in sub['problem']:
 			continue
-		seen[str(sub['problem']['contestId'])+sub['problem']['index']] = 1
+		seen[sub['problem']['name']] = 1
 
 	for sub in submissions2['result']:
 		if 'problemsetName' in sub['problem']:
 			continue
-		seen[str(sub['problem']['contestId'])+sub['problem']['index']] = 1
+		seen[sub['problem']['name']] = 1
 
 	problems = response.json()
 
 	viable = []
 
 	for problem in problems['result']['problems']:
-		if 'rating' in problem and 'problemsetName' not in problem:
+		if 'rating' in problem and 'problemsetName' not in problem and problem['name'] not in seen:
 			if problem['rating'] and challenge.diff_range[0] <= problem['rating'] <= challenge.diff_range[1]:
 				viable.append(problem)
 
@@ -202,13 +202,13 @@ async def c_challenge(message, author, server):
 
 	#	check if the queried user is a member of the same discord server
 
-	tar = query[1]
+	tar = query[1].replace('!',"")
 	try:
 		if len(tar) <= 3 or tar[:2] != '<@' or tar[-1] != '>' or int(tar[2:-1]) not in [member.id for member in server.members]:
 			await message.channel.send('That is an invalid request. Please format challenges as thus: `c!challenge [@discord user] [cf handle1] [cf handle2] [difficulty floor] [difficulty ceiling] [problem tags]`. See c!help for clarification.')
 			return
 	except ValueError:
-		await message.channel.send('That is an invalid request. Please format challenges as thus: `c!challenge [@discord user] [cf handle1] [cf handle2] [difficulty ceiling] [problem tags]`. See c!help for clarification.')
+		await message.channel.send('That is an invalid request. Please format challenges as thus: `c!challenge [@discord user] [cf handle1] [cf handle2] [difficulty floor] [difficulty ceiling] [problem tags]`. See c!help for clarification.')
 		return
 	challenge_id = int(tar[2:-1])
 	cur_challenge = PendingChallenge(challenge_id, query[2], query[3], [0,5000], [])
@@ -243,6 +243,8 @@ async def c_challenge(message, author, server):
 
 	#	need to check whether or not a challenge between the two users is already pending
 
+	await message.channel.send('Please wait while I ensure there are problems filling those constraints.')
+
 	if not await get_problems(cur_challenge):
 		await message.channel.send('There were no problems filling those contraints. Either you\'ve solved too many problems or you should adjust the difficulty range or problem types.')
 		return
@@ -261,12 +263,46 @@ async def c_challenge(message, author, server):
 
 
 async def c_cancel(message, author, server):
-	pass
+
+	query = message.content.split()
+	if len(query) != 2:
+		await message.channel.send('That is an invalid request. Cancel challenges in the format `c!cancel @user`. See c!help for clarification.')
+		return
+
+	tar = query[1].replace('!',"")
+	try:
+		if len(tar) <= 3 or tar[:2] != '<@' or tar[-1] != '>' or int(tar[2:-1]) not in [member.id for member in server.members]:
+			await message.channel.send('That is an invalid request. Cancel challenges in the format `c!cancel @user`. See c!help for clarification.')
+			return
+	except ValueError:
+		await message.channel.send('That is an invalid request. Cancel challenges in the format `c!cancel @user`. See c!help for clarification.')
+		return
+	target_id = int(tar[2:-1])
+
+	if author not in pending:
+		await message.channel.send('You have no ongoing or pending challenge with that user.')
+		return
+
+	for challenge in pending[author]:
+		if challenge.user == target_id:
+			await message.channel.send('You have successfully canceled your pending challenge with <@%i>.' % target_id)
+			return
+
+	for challenge in challenges:
+		if (challenge.user1 == author and challenge.user2 == target_id) or (challenge.user1 == target_id and challenge.user2 == author):
+			await message.channel.send('You have successfully canceled your pending challenge with <@%i>.' % target_id)
+			return
+
+	await message.channel.send('You have no ongoing or pending challenge with that user.')
 
 
 async def c_accept(message, author, server):
 	query = message.content.split()
-	tar = query[1]
+	if len(query) != 2:
+		await message.channel.send('That is an invalid request. Accept challenges in the format `c!accept @user`. See c!help for clarification.')
+		return
+
+	tar = query[1].replace('!',"")
 	try:
 		if len(tar) <= 3 or tar[:2] != '<@' or tar[-1] != '>' or int(tar[2:-1]) not in [member.id for member in server.members]:
 			await message.channel.send('That is an invalid request. Accept challenges in the format `c!accept @user`. See c!help for clarification.')
@@ -297,7 +333,7 @@ async def c_accept(message, author, server):
 				await message.channel.send('1')
 				await asyncio.sleep(1)
 				await message.channel.send("The challenge has begun! https://codeforces.com/problemset/problem/%i/%s" % (problem['contestId'], problem['index']))
-				cur_challenge = Challenge(challenge.user, author, challenge.handle1, challenge.handle2, problem, message.channel)
+				cur_challenge = Challenge(challenge_id, author, challenge.handle1, challenge.handle2, problem, message.channel)
 				challenges.append(cur_challenge)
 				return
 
