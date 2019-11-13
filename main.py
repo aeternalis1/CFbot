@@ -6,6 +6,29 @@ import time
 from random import randint
 from check_subs import check_subs
 from challenges import *
+from misc_commands import *
+
+'''
+FILE ORGANIZATION:
+
+models.py (CLASSES):
+	- Challenge(user1, user2, handle1, handle2, problem, channel)
+	- PendingChallenge(user, handle1, handle2, diff_range, problem_types)
+check_subs.py:
+	- end_challenge_win(challenge, winner, loser)
+	- end_challenge_draw(challenge)
+	- check_subs()
+challenges.py:
+	- c_challenge(message, author, server)
+	- c_accept(message, author, server)
+	- c_cancel(message, author, server)
+	- challenges = []
+	- pending = {}
+util_commands.py:
+	- valid_handles(handle1, handle2)
+	- get_problems(challenge)
+
+'''
 
 client = discord.Client()
 
@@ -15,26 +38,6 @@ activity = discord.Game(name="c!help")
 async def on_ready():
     await client.change_presence(status=discord.Status.idle, activity=activity)
     await check_subs()
-
-
-'''
-API queries needed:
-
-user.status (gets submissions of user, check for problems already attempted)
-problemset.problems (gets all problems)
-problemset.recentStatus (gets recent submissions)
-'''
-
-async def c_help(message, author, server):
-	pass
-
-
-async def c_pending(message, author, server):
-	pass
-
-
-async def c_ongoing(message, author, server):
-	pass
 
 
 to_func = {
@@ -72,4 +75,4 @@ async def on_message(message):
     else:
         await invalid(message)
 
-client.run('NjQyNzM2NTA3NjM1MTA1ODA0.XcgtTQ.-P0aL9-kEK2m2M-Tapc41W58VWw')
+client.run('')

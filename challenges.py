@@ -154,6 +154,7 @@ async def c_accept(message, author, server):
 
 	for challenge in pending[challenge_id]:
 		if challenge.user == author:
+			print('Please wait while I verify there are still problems fulfilling your constraints.')
 			problems = await get_problems(challenge)
 			if not problems:
 				await message.channel.send('Apparently there are no longer any problems filling the constraints. Please try resending the challenge.')
@@ -161,13 +162,11 @@ async def c_accept(message, author, server):
 				return
 			else:
 				problem = problems[randint(0,len(problems)-1)]
-				await message.channel.send('<@%i> has accepted <@%i>\'s challenge! The problem will be revealed in 3' % (author, challenge_id))
+				await message.channel.send('<@%i> has accepted <@%i>\'s challenge!' % (author, challenge_id))
 				await asyncio.sleep(1)
-				await message.channel.send('2')
+				await message.channel.send('3... 2... 1...')
 				await asyncio.sleep(1)
-				await message.channel.send('1')
-				await asyncio.sleep(1)
-				await message.channel.send("The challenge has begun! https://codeforces.com/problemset/problem/%i/%s" % (problem['contestId'], problem['index']))
+				await message.channel.send("Let the race between <@%i> and <@%i> begin! https://codeforces.com/problemset/problem/%i/%s" % (author, challenge_id, problem['contestId'], problem['index']))
 				cur_challenge = Challenge(challenge_id, author, challenge.handle1, challenge.handle2, problem, message.channel)
 				challenges.append(cur_challenge)
 				pending[challenge_id].remove(challenge)
