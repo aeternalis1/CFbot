@@ -24,6 +24,8 @@ challenges.py:
 	- c_cancel(message, author, server)
 	- challenges = []
 	- pending = {}
+	- c_pending(message,author,server)
+	- c_ongoing(message,author,server)
 util_commands.py:
 	- valid_handles(handle1, handle2)
 	- get_problems(challenge)
@@ -38,6 +40,7 @@ activity = discord.Game(name="c!help")
 async def on_ready():
     await client.change_presence(status=discord.Status.idle, activity=activity)
     await check_subs()
+
 
 
 to_func = {

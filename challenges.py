@@ -154,7 +154,7 @@ async def c_accept(message, author, server):
 
 	for challenge in pending[challenge_id]:
 		if challenge.user == author:
-			print('Please wait while I verify there are still problems fulfilling your constraints.')
+			await message.channel.send('Please wait while I verify there are still problems fulfilling your constraints.')
 			problems = await get_problems(challenge)
 			if not problems:
 				await message.channel.send('Apparently there are no longer any problems filling the constraints. Please try resending the challenge.')
@@ -173,3 +173,63 @@ async def c_accept(message, author, server):
 				return
 
 	await message.channel.send('You have no pending challenge from that user.')
+
+
+async def c_pending(message, author, server):
+	incoming = []
+	outgoing = []
+	for challenge_id in pending:
+		for challenge in pending[challenge_id]:
+			if challenge.user == author:
+				incoming.append([challenge_id, challenge])
+
+	if author in pending:
+		outgoing = pending[author]
+
+	if incoming == [] and outgoing == []:
+		await message.channel.send("You have no pending challenges.")
+		return
+
+	msg = []
+	if incoming:
+		msg.append("You have %d incoming challenge(s):" % len(incoming))
+		for [user, challenge] in incoming:
+			msg.append("Competitor: %s" % challenge.handle1)
+			msg.append("Difficulty: %d - %d" % (challenge.diff_range[0], challenge.diff_range[1]))
+			if challenge.problem_types == []:
+				msg.append("Problem types: None \n")
+			else:
+				msg.append("Problem types: " + ", ".join(challenge.problem_types)+'\n')
+	if outgoing:
+		msg.append("You have %d outgoing challenge(s):" % len(outgoing))
+		for challenge in outgoing:
+			msg.append("Competitor: %s" % challenge.handle2)
+			msg.append("Difficulty: %d - %d" % (challenge.diff_range[0], challenge.diff_range[1]))
+			if challenge.problem_types == []:
+				msg.append("Problem types: None \n")
+			else:
+				msg.append("Problem types: " + ", ".join(challenge.problem_types)+'\n')
+
+	await message.channel.send('\n'.join(msg))
+
+
+async def c_ongoing(message, author, server):
+	ongoing = []
+	for challenge in challenges:
+		if challenge.user1 == author:
+			ongoing.append([challenge.handle2, challenge])
+		elif challenge.user2 == author:
+			ongoing.append([challenge.handle1, challenge])
+
+	if ongoing == []:
+		await message.channel.send("You have no ongoing challenges.")
+		return
+
+	msg = ["You have %d ongoing challenge(s):" % len(ongoing)]
+	for [user, challenge] in ongoing:
+		msg.append("Competitor: %s" % user)
+		msg.append("Problem: https://codeforces.com/problemset/problem/%i/%s" % (challenge.problem['contestId'], challenge.problem['index']))
+		total_time = time.time() - challenge.start_time
+		msg.append("Time in progress: %d minute(s) and %d second(s)\n" % (total_time / 60, total_time % 60))
+
+	await message.channel.send('\n'.join(msg))
