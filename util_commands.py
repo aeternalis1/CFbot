@@ -63,4 +63,3 @@ async def get_problems(challenge):
 				viable.append(problem)
 
 	return viable
-

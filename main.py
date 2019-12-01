@@ -24,11 +24,14 @@ challenges.py:
 	- c_cancel(message, author, server)
 	- challenges = []
 	- pending = {}
-	- c_pending(message,author,server)
-	- c_ongoing(message,author,server)
 util_commands.py:
 	- valid_handles(handle1, handle2)
 	- get_problems(challenge)
+misc_commands.py:
+	- c_help(message,author,server)
+	- c_pending(message,author,server)
+	- c_ongoing(message,author,server)
+	- c_rating(message,author,server)
 
 '''
 
@@ -49,7 +52,8 @@ to_func = {
     'cancel' : c_cancel,			# cancel pending challenge with user (can be from either challenger or challengee)
     'accept' : c_accept,			# accept user's challenge
     'pending' : c_pending,			# view pending challenges
-    'ongoing' : c_ongoing			# view ongoing challenges
+    'ongoing' : c_ongoing,			# view ongoing challenges
+    'rating' : c_rating
 }
 
 
