@@ -32,6 +32,7 @@ misc_commands.py:
 	- c_pending(message,author,server)
 	- c_ongoing(message,author,server)
 	- c_rating(message,author,server)
+	- c_leaders(message,author,server)
 
 '''
 
@@ -53,7 +54,8 @@ to_func = {
     'accept' : c_accept,			# accept user's challenge
     'pending' : c_pending,			# view pending challenges
     'ongoing' : c_ongoing,			# view ongoing challenges
-    'rating' : c_rating
+    'rating' : c_rating,			# view target user's rating and win/loss
+    'leaders' : c_leaders			# view top users
 }
 
 
@@ -83,3 +85,18 @@ async def on_message(message):
         await invalid(message)
 
 client.run('')
+
+
+'''
+TO-DO list:
+
+- create registration system (verify user and link to cf account)
+- create match history (see last 10 matches or so?)
+
+Future ideas:
+- analysis of matches, problem types, problem difficulties
+- tournament bracket: allow people to create and join tournaments
+
+
+
+'''

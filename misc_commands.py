@@ -16,8 +16,10 @@ help_text = [
 	"> See your pending challenges.",
 	"> ** c!ongoing **",
 	"> See your ongoing challenges.",
-	"> ** c!rating **",
-	"> See your current rating."
+	"> ** c!rating [@user] **",
+	"> See target user\'s current rating and win/loss record.",
+	"> ** c!leaders **",
+	"> See the currently highest rated players."
 ]
 
 command_text = {
@@ -34,7 +36,8 @@ command_text = {
 	'cancel': ["Type `c!cancel [@user]` to cancel a pending challenge between yourself and that user. You may be either challenger or challengee (note that you may not cancel an ongoing challenge)."],
 	'pending': ["Type `c!pending` to see your pending challenges."],
 	'ongoing': ["Type `c!ongoing` to see your ongoing challenges."],
-	'rating': ["Type `c!rating` to see your current rating (default rating is 1500)."],
+	'rating': ["Type `c!rating [@user]` to see target user\'s current rating (default rating is 1500)."],
+	'leaders': ["Type c!leaders to see the current top ten rated competitors."],
 	'types': ["The available problem types are: "+", ".join(map(lambda x: '`'+x+'`', problem_types))]
 }
 
@@ -111,6 +114,29 @@ async def c_ongoing(message, author, server):
 
 
 async def c_rating(message, author, server):
-	if author not in ratings:
-		ratings[author] = 1500
-	await message.channel.send("<@%i>, your current rating is %i!" % (author, ratings[author]))
+	query = message.content.split()
+	if len(query) == 1:
+		tar = author
+	else:
+		tar = query[1].replace('!',"")
+		try:
+			if len(tar) <= 3 or tar[:2] != '<@' or tar[-1] != '>' or int(tar[2:-1]) not in [member.id for member in server.members]:
+				await message.channel.send('That is an invalid request. Please format requests as thus: `c!rating [@discord user]`. See c!help for clarification.')
+				return
+		except ValueError:
+			await message.channel.send('That is an invalid request. Please format requests as thus: `c!rating [@discord user]`. See c!help for clarification.')
+			return
+	if tar not in ratings:
+		ratings[tar] = 1500
+		record[tar] = [0,0]
+	await message.channel.send("<@%i>\'s current rating is %i, with a win/loss record of %i/%i!" % (tar, ratings[tar], record[tar][0], record[tar][1]))
+
+
+async def c_leaders(message, author, server):
+	arr = sorted([[ratings[key], key] for key in ratings], reverse = True)
+	msg = []
+	if len(arr) == 0:
+		msg.append('There is currently nobody on the leaderboard.')
+	for i in range(min(10,len(arr))):
+		msg.append('%i: <@%i> - Rating %i, W/L = %i/%i' % (i+1, arr[i][1], arr[i][0], record[arr[i][1]][0], record[arr[i][1]][1]))
+	await message.channel.send('\n'.join(msg))

@@ -30,6 +30,8 @@ async def end_challenge_win(challenge, winner, loser):
 	new_ratings = await get_ratings(ratings[winner], ratings[loser])
 	await challenge.channel.send("Updated ratings: <@%i> : %i -> %i, <@%i> : %i -> %i" % (winner, ratings[winner], new_ratings[0], loser, ratings[loser], new_ratings[1]))
 	ratings[winner], ratings[loser] = new_ratings
+	record[winner][0] += 1
+	record[loser][1] += 1
 	challenge.complete = True
 
 

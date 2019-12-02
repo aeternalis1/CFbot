@@ -11,6 +11,7 @@ from random import randint
 challenges = []		# list of Challenges
 pending = {} 	# pending challenges, mapped from challenger to list of challengees
 ratings = {}	# mapping players to their ratings (base rating of 1500)
+record = {}		# mapping players to their win/loss
 
 problem_types = ['constructive algorithms','sortings','strings','dp',
 'greedy','math','flows','graphs','data structures','matrices','brute force',
@@ -92,8 +93,10 @@ async def c_challenge(message, author, server):
 
 	if author not in ratings:
 		ratings[author] = 1500
+		record[author] = [0,0]
 	if challenge_id not in ratings:
 		ratings[challenge_id] = 1500
+		record[challenge_id] = [0,0]
 
 	await message.channel.send('<@%i> (Rating: %i) has challenged <@%i> (Rating: %i) to a race! <@%i> should send the message \"c!accept <@%i>\" to accept.' % (author, ratings[author], challenge_id, ratings[challenge_id], challenge_id, author))
 	
