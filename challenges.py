@@ -3,7 +3,7 @@ import json
 import requests
 import asyncio
 import time
-from util_commands import get_problems, valid_handles
+from util_commands import get_problems, valid_handle
 from models import *
 from random import randint
 
@@ -42,7 +42,7 @@ async def c_challenge(message, author, server):
 
 	#	check if handles are both valid
 
-	if not await valid_handles(query[2], query[3]):
+	if not (await valid_handle(query[2]) and await valid_handle(query[3])):
 		await message.channel.send('One or both of the handles are invalid. Check your spelling.')
 		return
 

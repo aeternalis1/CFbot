@@ -7,6 +7,8 @@ from random import randint
 from check_subs import check_subs
 from challenges import *
 from misc_commands import *
+from handles import c_sethandle, c_handle
+from models import client
 
 '''
 FILE ORGANIZATION:
@@ -14,6 +16,7 @@ FILE ORGANIZATION:
 models.py (CLASSES):
 	- Challenge(user1, user2, handle1, handle2, problem, channel)
 	- PendingChallenge(user, handle1, handle2, diff_range, problem_types)
+    - client(discord.client())
 check_subs.py:
 	- end_challenge_win(challenge, winner, loser)
 	- end_challenge_draw(challenge)
@@ -25,26 +28,24 @@ challenges.py:
 	- challenges = []
 	- pending = {}
 util_commands.py:
-	- valid_handles(handle1, handle2)
+	- valid_handle(handle1, handle2)
 	- get_problems(challenge)
-misc_commands.py:
+misc_commands.py:ww
 	- c_help(message,author,server)
-	- c_pending(message,author,server)
-	- c_ongoing(message,author,server)
-	- c_rating(message,author,server)
-	- c_leaders(message,author,server)
+	- c_pending(message, author, server)
+	- c_ongoing(message, author, server)
+	- c_rating(message, author, server)
+	- c_leaders(message, author, server)
+verification.py:
+    - c_sethandle(message, author, server)
+    - c_handle(message, author, server)
 
 '''
-
-client = discord.Client()
-
-activity = discord.Game(name="c!help")
 
 @client.event
 async def on_ready():
     await client.change_presence(status=discord.Status.idle, activity=activity)
     await check_subs()
-
 
 
 to_func = {
@@ -55,7 +56,8 @@ to_func = {
     'pending' : c_pending,			# view pending challenges
     'ongoing' : c_ongoing,			# view ongoing challenges
     'rating' : c_rating,			# view target user's rating and win/loss
-    'leaders' : c_leaders			# view top users
+    'leaders' : c_leaders,			# view top users
+    'sethandle' : c_sethandle       # set handle
 }
 
 
@@ -92,6 +94,8 @@ TO-DO list:
 
 - create registration system (verify user and link to cf account)
 - create match history (see last 10 matches or so?)
+- take problem difficulty into account when determining rating change?
+	- take difficulty / rating as a multiplier if you win, as a divisor if you lose?
 
 Future ideas:
 - analysis of matches, problem types, problem difficulties

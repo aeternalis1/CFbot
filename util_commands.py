@@ -2,10 +2,17 @@ import discord
 import json
 import requests
 import asyncio
+from models import client
+from random import randint
 
-async def valid_handles(handle1, handle2): 		# check validity of submitted handles by querying CF API
-	HANDLES_URL = "https://codeforces.com/api/user.info?handles=%s;%s" % (handle1, handle2)
-	response = requests.get(HANDLES_URL)
+
+async def get_user(user_id):
+	return await client.fetch_user(str(user_id))
+
+
+async def valid_handle(handle): 		# check validity of submitted handles by querying CF API
+	HANDLE_URL = "https://codeforces.com/api/user.info?handles=%s" % handle
+	response = requests.get(HANDLE_URL)
 
 	if response.status_code != 200:
 		return False
@@ -15,6 +22,21 @@ async def valid_handles(handle1, handle2): 		# check validity of submitted handl
 	if conversion_data['status'] != 'OK':
 		return False
 	return True
+
+
+async def rand_problem():
+	URL = "https://codeforces.com/api/problemset.problems?"
+	response = requests.get(URL)
+	if response.status_code != 200:
+		return False
+
+	problems = response.json()
+
+	pos = []
+	for problem in problems['result']['problems']:
+		pos.append(problem)
+
+	return pos[randint(0,len(pos))]
 
 
 async def get_problems(challenge):

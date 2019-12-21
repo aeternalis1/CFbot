@@ -1,5 +1,5 @@
 import time
-
+import discord
 
 class Challenge:
 	def __init__(self, user1, user2, handle1, handle2, problem, channel):
@@ -20,3 +20,7 @@ class PendingChallenge:
 		self.handle2 = handle2 		# cf handle of second user
 		self.diff_range = diff_range 		# difficulty range
 		self.problem_types = problem_types		# problem types (AND, not OR)
+
+client = discord.Client()
+
+activity = discord.Game(name="c!help")
