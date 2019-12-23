@@ -34,7 +34,6 @@ async def verify(author, start_time, handle, message):
 					return True
 
 		await asyncio.sleep(5)	# check every 5 seconds
-		print (time.time()-start_time)
 
 	return False
 
@@ -59,4 +58,20 @@ async def c_sethandle(message, author, server):	# sets handle of user
 
 
 async def c_handle(message, author, server):	# checks handle of target user
-	pass
+	query = message.content.split()
+	if len(query) != 2:
+		await message.channel.send("Invalid request. Please format your requests as such: `c!handle <@user>`")
+		return
+	tar = query[1].replace('!',"")
+	try:
+		if len(tar) <= 3 or tar[:2] != '<@' or tar[-1] != '>' or int(tar[2:-1]) not in [member.id for member in server.members]:
+			await message.channel.send('Invalid request. Please format your requests as such: `c!handle <@user>')
+			return
+	except ValueError:
+		await message.channel.send('Invalid request. Please format your requests as such: `c!handle <@user>')
+		return
+	user = int(tar[2:-1])
+	if user not in handles:
+		await message.channel.send('There is currently no handle associated with that user.')
+	else:
+		await message.channel.send('That user has the codeforces handle `%s`.' % handles[user])

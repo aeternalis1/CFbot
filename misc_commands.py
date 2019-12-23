@@ -4,39 +4,43 @@ from challenges import problem_types, challenges, pending, ratings
 help_text = [
 	"> List of CFbot commands:",
 	"> ** c!help **",
-	"> Literally the command you just typed. The results are as you see. To get more information about a certain command, type `c!help [command]`, e.g. `c!help challenge`",
-	"> ** c!challenge [@user] [handle1] [handle2] [difficulty LB] [difficulty UB] [problem tags] **",
+	"> Brings up the list of commands. To get more information about a certain command, type `c!help [command]`, e.g. `c!help challenge`",
+	"> ** c!challenge <@user> [difficulty LB] [difficulty UB] [problem tags] **",
 	"> Challenge another user to a race to solve a problem on Codeforces that neither user has attempted," + \
 	" within difficulty rating and problem type constraints provided by the user. e.g. `c!challenge @user tourist petr 100 3000 dp implementation fft`",
-	"> ** c!accept [@user] **",
+	"> ** c!accept <@user> **",
 	"> Accept a pending challenge from target user.",
-	"> ** c!cancel [@user] **",
+	"> ** c!cancel <@user> **",
 	"> Cancel a pending challenge with target user (can be issued from both challenger or challengee).",
 	"> ** c!pending **",
 	"> See your pending challenges.",
 	"> ** c!ongoing **",
 	"> See your ongoing challenges.",
-	"> ** c!rating [@user] **",
+	"> ** c!rating <@user> **",
 	"> See target user\'s current rating and win/loss record.",
 	"> ** c!leaders **",
-	"> See the currently highest rated players."
+	"> See the currently highest rated players.",
+	"> ** c!sethandle [handle] **",
+	"> Set your Codeforces handle to [handle].",
+	"> ** c!handle <@user> **",
+	"> See target user\'s Codeforces handle."
 ]
 
 command_text = {
-	'help': ["Really not sure what you expected from this."],
+	'help': ["Brings up the list of commands. To get more information about a certain command, type `c!help [command]`, e.g. `c!help challenge`"],
 	'challenge': [
 		"Challenges are sent in the following format:",
-		"`c!challenge [@user] [handle1] [handle2] [difficulty LB] [difficulty UB] [problem tags]`",
-		"[@user] : a ping you send to the discord user you wish to challenge.",
-		"[handle1] [handle2] : your Codeforces handle and the challengee's handle respectively.",
+		"`c!challenge <@user> [difficulty LB] [difficulty UB] [problem tags]`",
+		"<@user> : a ping you send to the discord user you wish to challenge.",
 		"[difficulty LB] [difficulty UB] : Two integers, the lower and upper bounds for your challenge problem.",
-		"[problem tags] : This field isn\'t required, but you may include a space-separated list of problem types. Type `c!help types` to see what\'s available."
+		"[problem tags] : This field isn\'t required, but you may include a space-separated list of problem types. Type `c!help types` to see what\'s available.",
+		"Please ensure that you\'ve set and verified your Codeforces handle using c!sethandle before challenging."
 	],
-	'accept': ["Type `c!accept [@user]` to accept a pending challenge from that user."],
-	'cancel': ["Type `c!cancel [@user]` to cancel a pending challenge between yourself and that user. You may be either challenger or challengee (note that you may not cancel an ongoing challenge)."],
+	'accept': ["Type `c!accept <@user>` to accept a pending challenge from that user."],
+	'cancel': ["Type `c!cancel <@user>` to cancel a pending challenge between yourself and that user. You may be either challenger or challengee (note that you may not cancel an ongoing challenge)."],
 	'pending': ["Type `c!pending` to see your pending challenges."],
 	'ongoing': ["Type `c!ongoing` to see your ongoing challenges."],
-	'rating': ["Type `c!rating [@user]` to see target user\'s current rating (default rating is 1500)."],
+	'rating': ["Type `c!rating <@user>` to see target user\'s current rating (default rating is 1500)."],
 	'leaders': ["Type c!leaders to see the current top ten rated competitors."],
 	'types': ["The available problem types are: "+", ".join(map(lambda x: '`'+x+'`', problem_types))]
 }
@@ -106,7 +110,7 @@ async def c_ongoing(message, author, server):
 	msg = ["You have %d ongoing challenge(s):" % len(ongoing)]
 	for [user, challenge] in ongoing:
 		msg.append("Competitor: %s" % user)
-		msg.append("Problem: https://codeforces.com/problemset/problem/%i/%s" % (challenge.problem['contestId'], challenge.problem['index']))
+		msg.append("Problem: https://Codeforces.com/problemset/problem/%i/%s" % (challenge.problem['contestId'], challenge.problem['index']))
 		total_time = time.time() - challenge.start_time
 		msg.append("Time in progress: %d minute(s) and %d second(s)\n" % (total_time / 60, total_time % 60))
 

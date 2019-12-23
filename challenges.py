@@ -23,7 +23,7 @@ problem_types = ['constructive algorithms','sortings','strings','dp',
 
 async def c_challenge(message, author, server):
 	query = message.content.split()
-	if len(query) < 6:
+	if len(query) < 4:
 		await message.channel.send('Your query is missing fields. See `c!help` for details.')
 		return
 
@@ -38,18 +38,23 @@ async def c_challenge(message, author, server):
 		await message.channel.send('That is an invalid request. Please format challenges as thus: `c!challenge [@discord user] [cf handle1] [cf handle2] [difficulty floor] [difficulty ceiling] [problem tags]`. See c!help for clarification.')
 		return
 	challenge_id = int(tar[2:-1])
-	cur_challenge = PendingChallenge(challenge_id, query[2], query[3], [0,5000], [])
 
 	#	check if handles are both valid
 
-	if not (await valid_handle(query[2]) and await valid_handle(query[3])):
-		await message.channel.send('One or both of the handles are invalid. Check your spelling.')
+	if author not in handles or challenge_id not in handles:
+		await message.channel.send('One or both users do not have a handle linked to their discord account. Use `c!sethandle [handle]` to set your handle.')
 		return
+
+	if handles[author] == handles[challenge_id]:
+		await message.channel.send('The handles associated with your accounts are the same codeforces account. Use `c!sethandle [handle]` to change your handle.')
+		return
+
+	cur_challenge = PendingChallenge(challenge_id, handles[author], handles[challenge_id], [0,5000], [])
 
 	#	check if query range is integers
 
 	try:
-		cur_challenge.diff_range[0], cur_challenge.diff_range[1] = int(query[4]), int(query[5])
+		cur_challenge.diff_range[0], cur_challenge.diff_range[1] = int(query[2]), int(query[3])
 	except:
 		await message.channel.send('The difficulty range requested is invalid.')
 		return
@@ -59,7 +64,7 @@ async def c_challenge(message, author, server):
 
 	cur = ''
 
-	for i in range(6,len(query)):
+	for i in range(4,len(query)):
 		cur = (cur + " " + query[i]).strip()
 		if cur in problem_types:
 			cur_challenge.problem_types.append(cur)
@@ -79,7 +84,7 @@ async def c_challenge(message, author, server):
 	if challenge_id in pending:
 		for challenge in pending[challenge_id]:
 			if challenge.user == author:
-				await message.channel.send('<@%i> has already challenged you to a race! You may either cancel or accept it with the commands `c!cancel <@user>` or `c!accept <@user>` respectively.' % challenge_id)
+				await message.channel.send('<@%i> has already challenged you! You may either cancel or accept it with the commands `c!cancel <@user>` or `c!accept <@user>` respectively.' % challenge_id)
 				return
 
 	if author not in pending:

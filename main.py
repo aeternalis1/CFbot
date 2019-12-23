@@ -62,7 +62,7 @@ to_func = {
 
 
 # format of challenge:
-# c!challenge [user(discord user)] [handle1] [handle2] [difficulty lower bound] [difficulty upper bound] [problem tags]
+# c!challenge [user(discord user)] [difficulty lower bound] [difficulty upper bound] [problem tags]
 
 # format of accept, decline, cancel:
 # c![command] [user]
